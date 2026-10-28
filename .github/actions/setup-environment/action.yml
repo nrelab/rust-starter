@@ -1,0 +1,37 @@
+name: Setup Rust Environment
+description: Configure safe, predictable Cargo and sccache environment variables
+inputs:
+  sccache:
+    description: Enable sccache wrapper when sccache is already installed
+    required: false
+    default: "false"
+  cache-size:
+    description: Local sccache cache cap
+    required: false
+    default: "5G"
+outputs:
+  cargo-home:
+    description: Cargo home path
+    value: ${{ steps.env.outputs.cargo_home }}
+runs:
+  using: composite
+  steps:
+    - id: env
+      shell: bash
+      env:
+        USE_SCCACHE: ${{ inputs.sccache }}
+        CACHE_SIZE: ${{ inputs.cache-size }}
+      run: |
+        set -euo pipefail
+        echo "CARGO_TERM_COLOR=always" >> "$GITHUB_ENV"
+        echo "CARGO_INCREMENTAL=0" >> "$GITHUB_ENV"
+        echo "CARGO_HOME=${CARGO_HOME:-$HOME/.cargo}" >> "$GITHUB_ENV"
+        echo "SCCACHE_DIR=${SCCACHE_DIR:-$HOME/.cache/sccache}" >> "$GITHUB_ENV"
+        echo "SCCACHE_CACHE_SIZE=$CACHE_SIZE" >> "$GITHUB_ENV"
+        if [[ "$USE_SCCACHE" == "true" ]]; then
+          command -v sccache >/dev/null 2>&1 || { echo "sccache requested but not installed" >&2; exit 1; }
+          echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+        fi
+        echo "cargo_home=${CARGO_HOME:-$HOME/.cargo}" >> "$GITHUB_OUTPUT"
+        rustc --version
+        cargo --version

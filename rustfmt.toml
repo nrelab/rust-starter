@@ -1,0 +1,2 @@
+edition = "2024"
+# Keep formatting defaults stable; add project-specific options only when needed.

@@ -1,0 +1,30 @@
+[package]
+name = "rust-starter"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "A production-minded Rust starter template"
+license = "MIT"
+readme = "README.md"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+
+[dev-dependencies]
+
+[profile.dev]
+debug = 1
+
+[profile.test]
+debug = 1
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "debuginfo"
+
+[workspace]
+resolver = "3"
+members = ["."]

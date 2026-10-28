@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Format, lint, test, release build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configure environment
+        uses: ./.github/actions/setup-environment
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+      - name: Install sccache (trusted pushes only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: ./.github/actions/sccache-action
+        with:
+          version: "0.10.0"
+          backend: local
+      - name: Quality gates
+        shell: bash
+        run: bash scripts/check.sh
+
+  release-pr-convention:
+    if: github.event_name == 'pull_request' && startsWith(github.head_ref, 'release/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/check-release-pr

@@ -1,0 +1,66 @@
+name: Configure sccache
+description: Install a pinned sccache version and configure local or S3-compatible caching
+inputs:
+  version:
+    description: Exact sccache crate version (avoid latest for production)
+    required: false
+    default: "0.10.0"
+  backend:
+    description: "local or s3"
+    required: false
+    default: "local"
+  bucket:
+    description: S3 bucket name; required for backend=s3
+    required: false
+    default: ""
+  region:
+    description: S3 region; required for backend=s3
+    required: false
+    default: ""
+  key-prefix:
+    description: S3 object key prefix
+    required: false
+    default: "sccache"
+  cache-size:
+    description: Local cache size cap
+    required: false
+    default: "5G"
+runs:
+  using: composite
+  steps:
+    - name: Install sccache
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        if ! command -v sccache >/dev/null 2>&1 || [[ "$(sccache --version 2>/dev/null || true)" != *"$VERSION"* ]]; then
+          cargo install sccache --version "$VERSION" --locked
+        fi
+        sccache --version
+    - name: Configure sccache environment
+      shell: bash
+      env:
+        BACKEND: ${{ inputs.backend }}
+        BUCKET: ${{ inputs.bucket }}
+        REGION: ${{ inputs.region }}
+        PREFIX: ${{ inputs.key-prefix }}
+        CACHE_SIZE: ${{ inputs.cache-size }}
+      run: |
+        set -euo pipefail
+        echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+        echo "SCCACHE_DIR=${SCCACHE_DIR:-$HOME/.cache/sccache}" >> "$GITHUB_ENV"
+        echo "SCCACHE_CACHE_SIZE=$CACHE_SIZE" >> "$GITHUB_ENV"
+        if [[ "$BACKEND" == "s3" ]]; then
+          [[ -n "$BUCKET" && -n "$REGION" ]] || { echo "S3 backend requires bucket and region" >&2; exit 1; }
+          echo "SCCACHE_BUCKET=$BUCKET" >> "$GITHUB_ENV"
+          echo "SCCACHE_REGION=$REGION" >> "$GITHUB_ENV"
+          echo "SCCACHE_S3_KEY_PREFIX=$PREFIX" >> "$GITHUB_ENV"
+          echo "SCCACHE_S3_USE_SSL=true" >> "$GITHUB_ENV"
+        elif [[ "$BACKEND" != "local" ]]; then
+          echo "Unsupported backend: $BACKEND" >&2; exit 1
+        fi
+    - name: Show cache stats
+      if: always()
+      shell: bash
+      run: sccache --show-stats || true

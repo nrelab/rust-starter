@@ -1,0 +1,12 @@
+[build]
+# Keep this relative to the workspace. Override with CARGO_TARGET_DIR when desired.
+target-dir = "target"
+
+[term]
+color = "auto"
+
+[alias]
+c = "check --locked"
+t = "test --locked"
+lint = "clippy --workspace --all-targets --locked -- -D warnings"
+fmt-check = "fmt --all -- --check"

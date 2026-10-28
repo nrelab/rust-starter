@@ -1,0 +1,31 @@
+name: Setup Rust
+description: Install the repository's pinned Rust toolchain and components
+inputs:
+  toolchain:
+    description: Rust toolchain channel/version
+    required: false
+    default: "1.92.0"
+  targets:
+    description: Optional comma-separated compilation targets
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Install pinned toolchain
+      shell: bash
+      env:
+        TOOLCHAIN: ${{ inputs.toolchain }}
+        TARGETS: ${{ inputs.targets }}
+      run: |
+        set -euo pipefail
+        rustup toolchain install "$TOOLCHAIN" --profile minimal --component rustfmt --component clippy
+        if [[ -n "$TARGETS" ]]; then
+          IFS=',' read -ra items <<< "$TARGETS"
+          for target in "${items[@]}"; do
+            target="$(echo "$target" | xargs)"
+            [[ -z "$target" ]] || rustup target add "$target" --toolchain "$TOOLCHAIN"
+          done
+        fi
+        rustc +"$TOOLCHAIN" --version
+        cargo +"$TOOLCHAIN" --version

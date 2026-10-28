@@ -1,0 +1,7 @@
+{
+  "template": "rust-starter",
+  "generated_on": "2026-10-28",
+  "file_count": 37,
+  "safety": "Disk audit is read-only; safe-clean is narrowly scoped and requires confirmation unless --yes is explicitly passed.",
+  "validation": "Generated files were written and basic structure checked; CI workflows were not run on GitHub in this environment."
+}

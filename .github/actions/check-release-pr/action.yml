@@ -1,0 +1,37 @@
+name: Check Release PR
+description: Validate release PR branch prefix and title convention
+inputs:
+  branch-prefix:
+    description: Required PR head branch prefix
+    required: false
+    default: "release/"
+  title-regex:
+    description: Regex accepted for the pull request title
+    required: false
+    default: '^(chore|release)(\([^)]+\))?: .+'
+outputs:
+  is_release_pr:
+    description: True when both branch and title satisfy the release convention
+    value: ${{ steps.validate.outputs.is_release_pr }}
+runs:
+  using: composite
+  steps:
+    - id: validate
+      shell: bash
+      env:
+        BRANCH: ${{ github.head_ref }}
+        TITLE: ${{ github.event.pull_request.title }}
+        PREFIX: ${{ inputs.branch-prefix }}
+        TITLE_REGEX: ${{ inputs.title-regex }}
+      run: |
+        set -euo pipefail
+        if [[ "$BRANCH" == "$PREFIX"* ]] && [[ "$TITLE" =~ $TITLE_REGEX ]]; then
+          echo "is_release_pr=true" >> "$GITHUB_OUTPUT"
+          echo "Release PR convention passed."
+        else
+          echo "is_release_pr=false" >> "$GITHUB_OUTPUT"
+          echo "Release PR convention failed." >&2
+          echo "Expected branch prefix: $PREFIX" >&2
+          echo "Expected title regex: $TITLE_REGEX" >&2
+          exit 1
+        fi
