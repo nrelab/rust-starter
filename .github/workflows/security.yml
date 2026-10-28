@@ -19,7 +19,7 @@ jobs:
   dependency-audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-rust
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
@@ -29,7 +29,7 @@ jobs:
   dependency-policy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-rust
       - name: Install cargo-deny
         run: cargo install cargo-deny --locked
